@@ -69,6 +69,7 @@ function init() {
   socket.on('newGraph', function(data) {
     console.log('new graph:', data.graph);
     graphex = newgraphex(canvas, data.graph);
+    graphex.updateAndRender();
   });
 
   graphex = newgraphex(canvas);
