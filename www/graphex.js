@@ -10,6 +10,7 @@ var pingInterval
 
 function init() {
   var canvas
+    , i
     ;
 
   newgraph = require('./common/graph').newgraph;
@@ -65,20 +66,27 @@ function init() {
     css('left', '0px').
     appendTo(document.body);
 
+  socket.on('newgraph', function(data) {
+    graphex = newgraphex(canvas, data.graph);
+  });
+
   graphex = newgraphex(canvas);
-  graphex.addNode('foo');
-  graphex.addNode('bar');
-  graphex.addNode('baz');
-  graphex.addNode('qux');
-  graphex.addEdge('foo', 'bar');
-  graphex.addEdge('foo', 'baz');
-  graphex.addEdge('foo', 'qux');
-  //graphex.addNode('bar');
+  for (i=0; i<20; i++) {
+    graphex.addNode('loading'+i).name = 'loading...';
+    graphex.updateAndRender();
+  }
+  for (i=0; i<20; i++) {
+    try {
+      graphex.addEdge(
+        'loading'+Math.floor(Math.random()*20),
+        'loading'+Math.floor(Math.random()*20));
+    } catch (e) {}
+  }
   graphex.updateAndRender();
 }
 
-function newgraphex(canvas) {
-  var graph = newgraph()
+function newgraphex(canvas, copy) {
+  var graph = newgraph(copy)
     , nodes = graph._getNodes()
     , edges = graph._getEdges()
     , draw = canvas.getContext('2d')
@@ -93,7 +101,7 @@ function newgraphex(canvas) {
     , y: 0
     , vx: Math.random()
     , vy: Math.random()
-    , r: 12
+    , r: 18
     };
     return graph.addNode(id, data);
   }
@@ -125,7 +133,7 @@ function newgraphex(canvas) {
       a = nodes[nodeID].data;
       x0 = a.x + viewTranslationX;
       y0 = a.y + viewTranslationY;
-      draw.fillText(nodeID, x0, y0);
+      draw.fillText(nodes[nodeID].data.name, x0, y0);
     }
 
     draw.lineWidth = 1;
@@ -135,7 +143,6 @@ function newgraphex(canvas) {
       y0 = nodes[edges[id].a].data.y + viewTranslationY;
       x1 = nodes[edges[id].b].data.x + viewTranslationX;
       y1 = nodes[edges[id].b].data.y + viewTranslationY;
-      console.log('line', x0, y0, x1, y1);
       draw.beginPath();
       draw.moveTo(x0, y0);
       draw.lineTo(x1, y1);
