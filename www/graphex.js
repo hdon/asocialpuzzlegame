@@ -113,6 +113,15 @@ function newgraphex(canvas, copy) {
     return graph.addEdge(a, b, data);
   }
 
+  function removeNode(id) {
+    graph.removeNode(id);
+    updateAndRender();
+  }
+  function removeEdge(id) {
+    graph.removeEdge(id);
+    updateAndRender();
+  }
+
   function _calculateDistance(a, b) {
     return Math.sqrt(_calculateDistanceSquared(a, b));
   }
@@ -211,9 +220,12 @@ function newgraphex(canvas, copy) {
   return {
     addNode: addNode
   , addEdge: addEdge
+  , removeNode: removeNode
+  , removeEdge: removeEdge
   , updateAndRender: updateAndRender
   , _getNodes: function(){return nodes}
   , _getEdges: function(){return edges}
+  , _getGraph: function(){return graph}
   , _render: render
   }
 }
