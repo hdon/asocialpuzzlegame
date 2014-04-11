@@ -154,11 +154,15 @@ function newgraphex(canvas, copy) {
 
     draw.clearRect(0, 0, canvas.width, canvas.height);
 
-    draw.fillStyle = 'red';
     for (nodeID in nodes) {
       a = nodes[nodeID].data;
       x0 = a.x + viewTranslationX;
       y0 = a.y + viewTranslationY;
+      draw.fillStyle = '#dfd';
+      draw.beginPath();
+      draw.arc(x0, y0, a.r, 0, 2*Math.PI);
+      draw.fill();
+      draw.fillStyle = '#030';
       draw.fillText(nodes[nodeID].data.name, x0, y0);
     }
 
