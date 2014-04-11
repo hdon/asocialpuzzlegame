@@ -1,6 +1,7 @@
 function newgraph(copy) {
   var nodes = copy ? copy.nodes : {}
     , edges = copy ? copy.edges : {}
+    , graphex
     ;
 
   function edgeID(a, b) { return escape(a) + ':' + escape(b) }
@@ -16,6 +17,9 @@ function newgraph(copy) {
       edges: [],
       data: data
     }
+    
+    /* Invoke event listener */
+    graphex.onNodeAdded(id, data);
     return data;
   }
 
@@ -23,6 +27,8 @@ function newgraph(copy) {
     requireNode(id);
     /* Remove all edges containing node */
     nodes[id].edges.forEach(removeEdge);
+    /* Invoke event listener */
+    graphex.onNodeRemoved(id, data);
     /* Remove node itself */
     delete nodes[node];
   }
@@ -43,13 +49,23 @@ function newgraph(copy) {
     };
     nodes[a].edges.push(id);
     nodes[b].edges.push(id);
+    /* Invoke event listener */
+    graphex.onEdgeAdded(a, b, data);
     return data;
   }
 
+  function _spliceEdgeId(id) {
+    return id.split(':').map(unescape);
+  }
+
   function removeEdge(id) {
+    var nodeIds;
     if (arguments.length == 2)
       id = edgeID(id, arguments[1]);
     requireEdge(id);
+    /* Invoke event listener */
+    nodeIds = _spliceEdgeId(id);
+    graphex.onEdgeRemoved(nodeIds[0], nodeIds[1], data);
     delete edges[id];
   }
 
@@ -65,7 +81,8 @@ function newgraph(copy) {
     return edges[id].data;
   }
 
-  return {
+  graphex = {
+    /* Public accessors */
     edgeID: edgeID
   , nodeExists : nodeExists 
   , requireNode : requireNode 
@@ -75,9 +92,20 @@ function newgraph(copy) {
   , removeNode : removeNode 
   , addEdge: addEdge
   , removeEdge: removeEdge
+
+    /* Event listeneres */
+  , onNodeAdded: Function.prototype
+  , onEdgeAdded: Function.prototype
+  , onNodeRemoved: Function.prototype
+  , onEdgeRemoved: Function.prototype
+
+    /* Encapsulation bypass */
   , _getNodes: function(){return nodes}
   , _getEdges: function(){return edges}
+  , _spliceEdgeId: _spliceEdgeId
   };
+
+  return graphex;
 }
 
 exports.newgraph = newgraph;
