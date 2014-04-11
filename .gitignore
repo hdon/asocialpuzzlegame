@@ -1,0 +1,6 @@
+.*.sw*
+www/jquery-1.9.1.min.js
+www/modules.js
+config.js
+node_modules
+scratch
