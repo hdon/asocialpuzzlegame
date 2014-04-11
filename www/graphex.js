@@ -69,13 +69,12 @@ function init() {
   socket.on('newGraph', function(data) {
     console.log('new graph:', data.graph);
     graphex = newgraphex(canvas, data.graph);
-    graphex.updateAndRender();
+    updateAndRender();
   });
 
   graphex = newgraphex(canvas);
   for (i=0; i<20; i++) {
     graphex.addNode('loading'+i).name = 'loading...';
-    graphex.updateAndRender();
   }
   for (i=0; i<20; i++) {
     try {
@@ -84,7 +83,29 @@ function init() {
         'loading'+Math.floor(Math.random()*20));
     } catch (e) {}
   }
-  graphex.updateAndRender();
+  updateAndRender();
+
+  /* TODO This is horseshit, i just don't know how much i want to integrate graphex into the DOM */
+  $(canvas).on('mousedown', function (ev) {
+    graphex.mouseDown(ev.offsetX, ev.offsetY);
+  }).on('mousemove', function(ev) {
+    graphex.mouseMove(ev.offsetX, ev.offsetY);
+    if (graphex._getDraggingNodeId() !== null)
+      updateAndRender();
+  }).on('mouseup', function(ev) {
+    graphex.mouseUp();
+  });
+}
+
+/* TODO this is horseshit, i just don't know how much i want to integrate graphex into the DOM */
+function updateAndRender() {
+  var maxv;
+  maxv = graphex._update(); // TODO time!
+  graphex._render();
+  if (maxv > 0.1)
+    requestAnimFrame(updateAndRender);
+  else
+    console.log('graphex stable');
 }
 
 function newgraphex(canvas, copy) {
@@ -94,6 +115,7 @@ function newgraphex(canvas, copy) {
     , draw = canvas.getContext('2d')
     , viewTranslationX = canvas.width / 2
     , viewTranslationY = canvas.height / 2
+    , draggingNodeId = null
     ;
 
   if (arguments.length > 1)
@@ -154,18 +176,6 @@ function newgraphex(canvas, copy) {
 
     draw.clearRect(0, 0, canvas.width, canvas.height);
 
-    for (nodeID in nodes) {
-      a = nodes[nodeID].data;
-      x0 = a.x + viewTranslationX;
-      y0 = a.y + viewTranslationY;
-      draw.fillStyle = '#dfd';
-      draw.beginPath();
-      draw.arc(x0, y0, a.r, 0, 2*Math.PI);
-      draw.fill();
-      draw.fillStyle = '#030';
-      draw.fillText(nodes[nodeID].data.name, x0, y0);
-    }
-
     draw.lineWidth = 1;
     draw.strokeStyle = '#fcc';
     for (id in edges) {
@@ -178,16 +188,18 @@ function newgraphex(canvas, copy) {
       draw.lineTo(x1, y1);
       draw.stroke();
     }
-  }
 
-  function updateAndRender() {
-    var maxv;
-    maxv = update(); // TODO time!
-    render();
-    if (maxv > 0.1)
-      requestAnimFrame(updateAndRender);
-    else
-      console.log('graphex stable');
+    for (nodeID in nodes) {
+      a = nodes[nodeID].data;
+      x0 = a.x + viewTranslationX;
+      y0 = a.y + viewTranslationY;
+      draw.fillStyle = '#dfd';
+      draw.beginPath();
+      draw.arc(x0, y0, a.r, 0, 2*Math.PI);
+      draw.fill();
+      draw.fillStyle = '#030';
+      draw.fillText(nodes[nodeID].data.name, x0, y0);
+    }
   }
 
   function update() {
@@ -238,27 +250,58 @@ function newgraphex(canvas, copy) {
     return Math.sqrt(maxvsq);
   }
 
+  function mouseDown (x, y) {
+    var id, data, mpos;
+
+    mpos = {
+      x: x - viewTranslationX,
+      y: y - viewTranslationY
+    };
+
+    /* Check for hit TODO BSP */
+    for (id in nodes) {
+      data = nodes[id].data;
+      if (_calculateDistanceSquared(mpos, data) < data.r * data.r) {
+        console.log('mousedown got', id);
+        draggingNodeId = id;
+        break;
+      }
+    }
+    
+    if (draggingNodeId === null) {
+      console.log('mousedown nowhere');
+      return;
+    }
+  }
+
+  function mouseMove (x, y) {
+    x -= viewTranslationX;
+    y -= viewTranslationY;
+    if (draggingNodeId === null)
+      return;
+    nodes[draggingNodeId].data.x = x;
+    nodes[draggingNodeId].data.y = y;
+  }
+
+  function mouseUp () {
+    draggingNodeId = null;
+  }
+
   return {
     addNode: addNode
   , addEdge: addEdge
   , removeNode: removeNode
   , removeEdge: removeEdge
-  , updateAndRender: updateAndRender
+  , mouseDown: mouseDown
+  , mouseMove: mouseMove
+  , mouseUp: mouseUp
   , _getNodes: function(){return nodes}
   , _getEdges: function(){return edges}
   , _getGraph: function(){return graph}
+  , _update: update
   , _render: render
+  , _getDraggingNodeId: function(){return draggingNodeId}
   }
-}
-
-function render() {
-  draw.fillStyle = 'black';
-  draw.fillRect(
-    Math.random() * canvas.width,
-    Math.random() * canvas.height,
-    64, 64);
-  // if we need to draw updates...
-  requestAnimFrame(render);
 }
 
 /* http://www.paulirish.com/2011/requestanimationframe-for-smart-animating/ */
