@@ -67,6 +67,9 @@ function init() {
   graphex.addNode('bar');
   graphex.addNode('baz');
   graphex.addNode('qux');
+  graphex.addEdge('foo', 'bar');
+  graphex.addEdge('foo', 'baz');
+  graphex.addEdge('foo', 'qux');
   //graphex.addNode('bar');
   graphex.updateAndRender();
 }
@@ -173,6 +176,13 @@ function newgraphex(canvas) {
     return graph.addNode(id, data);
   }
 
+  function addEdge(a, b) {
+    var data = {
+      /* TODO */
+    };
+    return graph.addEdge(a, b, data);
+  }
+
   function _calculateDistance(a, b) {
     return Math.sqrt(_calculateDistanceSquared(a, b));
   }
@@ -184,7 +194,7 @@ function newgraphex(canvas) {
   }
 
   function render() {
-    var x0, y0, x1, y1, nodeID, a, b;
+    var x0, y0, x1, y1, nodeID, id, a, b;
 
     draw.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -194,6 +204,20 @@ function newgraphex(canvas) {
       x0 = a.x + viewTranslationX;
       y0 = a.y + viewTranslationY;
       draw.fillText(nodeID, x0, y0);
+    }
+
+    draw.lineWidth = 1;
+    draw.strokeStyle = '#fcc';
+    for (id in edges) {
+      x0 = nodes[edges[id].a].data.x + viewTranslationX;
+      y0 = nodes[edges[id].a].data.y + viewTranslationY;
+      x1 = nodes[edges[id].b].data.x + viewTranslationX;
+      y1 = nodes[edges[id].b].data.y + viewTranslationY;
+      console.log('line', x0, y0, x1, y1);
+      draw.beginPath();
+      draw.moveTo(x0, y0);
+      draw.lineTo(x1, y1);
+      draw.stroke();
     }
   }
 
@@ -247,7 +271,7 @@ function newgraphex(canvas) {
       data.y += data.vy;
 
       /* Some sort of force to settle things down */
-      data.vx *= 0.7;
+      data.vx *= 0.9;
       data.vy *= 0.7;
     }
 
@@ -257,6 +281,7 @@ function newgraphex(canvas) {
 
   return {
     addNode: addNode
+  , addEdge: addEdge
   , updateAndRender: updateAndRender
   , _getNodes: function(){return nodes}
   , _getEdges: function(){return edges}
