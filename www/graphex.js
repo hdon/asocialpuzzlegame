@@ -66,7 +66,8 @@ function init() {
     css('left', '0px').
     appendTo(document.body);
 
-  socket.on('newgraph', function(data) {
+  socket.on('newGraph', function(data) {
+    console.log('new graph:', data.graph);
     graphex = newgraphex(canvas, data.graph);
   });
 
@@ -86,13 +87,28 @@ function init() {
 }
 
 function newgraphex(canvas, copy) {
-  var graph = newgraph(copy)
+  var graph = newgraph()
     , nodes = graph._getNodes()
     , edges = graph._getEdges()
     , draw = canvas.getContext('2d')
     , viewTranslationX = canvas.width / 2
     , viewTranslationY = canvas.height / 2
     ;
+
+  if (arguments.length > 1)
+    _copyConstructor(copy);
+
+  /* "Copy constructor" */
+  function _copyConstructor(copy) {
+    /* TODO consider node and edge data??? */
+    var id;
+    for (id in copy.nodes)
+      addNode(id);
+    for (id in copy.edges) {
+      id = graph._spliceEdgeId(id);
+      addEdge(id[0], id[1]);
+    }
+  }
 
   function addNode(id) {
     var data = {
