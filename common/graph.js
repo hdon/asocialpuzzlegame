@@ -28,9 +28,9 @@ function newgraph(copy) {
     /* Remove all edges containing node */
     nodes[id].edges.forEach(removeEdge);
     /* Invoke event listener */
-    graphex.onNodeRemoved(id, data);
+    graphex.onNodeRemoved(id, nodes[id].data);
     /* Remove node itself */
-    delete nodes[node];
+    delete nodes[id];
   }
 
   function addEdge(a, b, data) {
@@ -65,7 +65,7 @@ function newgraph(copy) {
     requireEdge(id);
     /* Invoke event listener */
     nodeIds = _spliceEdgeId(id);
-    graphex.onEdgeRemoved(nodeIds[0], nodeIds[1], data);
+    graphex.onEdgeRemoved(nodeIds[0], nodeIds[1], edges[id].data);
     delete edges[id];
   }
 
@@ -103,6 +103,7 @@ function newgraph(copy) {
   , _getNodes: function(){return nodes}
   , _getEdges: function(){return edges}
   , _spliceEdgeId: _spliceEdgeId
+  , _getData: function(){return {nodes:nodes, edges:edges}}
   };
 
   return graphex;
