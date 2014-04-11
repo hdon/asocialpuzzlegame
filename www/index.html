@@ -1,0 +1,60 @@
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>Graphex</title>
+    <style>
+      #chatcontainer {
+        position: absolute;
+        left: 0px;
+        right: 0px;
+        bottom: 0px;
+        top: 256px;
+      }
+      #chatscroller {
+        position: absolute;
+        top: 0px;
+        bottom: 23px;
+        width: 100%;
+        overflow-y: scroll;
+      }
+      #chat {
+        width: 100%;
+        word-wrap: break-word;
+      }
+      #chat p {
+        margin: 0.15em 0px;
+      }
+      #chat .nick {
+        color: purple;
+      }
+      #chat .msg {
+        color: gray;
+      }
+      #chatinput {
+        position: absolute;
+        bottom: 0px;
+        height: 23px;
+        width: 100%;
+        border-top: 1px solid silver;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+      }
+    </style>
+    <script type="text/javascript">
+      /* TODO dynamically insert this data at web server */
+      var SOCKET_IO_HOST = window.location.protocol+'//'+window.location.host;
+    </script>
+    <script src="/jquery-1.9.1.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="graphex.js"></script>
+  </head>
+  <body>
+    <div id="chatcontainer">
+      <div id="chatscroller">
+        <div id="chat"></div>
+      </div>
+      <input id="chatinput" type="text" maxlength="512"/>
+    </div>
+  </body>
+</html>
