@@ -1,6 +1,6 @@
-function newgraph() {
-  var nodes = {}
-    , edges = {}
+function newgraph(copy) {
+  var nodes = copy ? copy.nodes : {}
+    , edges = copy ? copy.edges : {}
     ;
 
   function edgeID(a, b) { return escape(a) + ':' + escape(b) }
@@ -16,6 +16,7 @@ function newgraph() {
       edges: [],
       data: data
     }
+    return data;
   }
 
   function removeNode (id) {
