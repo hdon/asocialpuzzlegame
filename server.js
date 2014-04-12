@@ -67,17 +67,19 @@ io.sockets.on('connection', function (socket) {
     , nick
     ;
 
-  /* Set user's nick */
-  setNick('scrub'+uid);
-
   /* Welcome the user */
   serverMessage("Welcome to the server!");
 
   /* Tell the user his UID */
   socket.emit('uid', {uid:uid});
 
-  /* Tell the user about the graph */
+  /* Send the newGraph message before setNick() because setNick() will
+   * send updates concerning the graph that this user wouldn't have yet.
+   */
   socket.emit('newGraph', {graph:graph._getData()});
+
+  /* Set user's nick */
+  setNick('scrub'+uid);
 
   function setNick(newNick) {
     newNick = ''+newNick;
