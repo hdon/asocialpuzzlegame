@@ -51,11 +51,11 @@ graph.onNodeRemoved = function(id, data) {
   console.log('-node:', id, data);
   io.sockets.emit('removeNode', {id:id, data:data});
 }
-graph.edgeAdded = function(a, b, data) {
+graph.onEdgeAdded = function(a, b, data) {
   console.log('+edge:', a, b, data);
   io.sockets.emit('addEdge', {a:a, b:b, data:data});
 }
-graph.edgeRemoved = function(a, b, data) {
+graph.onEdgeRemoved = function(a, b, data) {
   console.log('-edge:', a, b, data);
   io.sockets.emit('removeEdge', {a:a, b:b, data:data});
 }
