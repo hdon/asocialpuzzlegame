@@ -58,8 +58,8 @@ function init() {
 
   /* Create canvas */
   canvas = document.createElement('canvas');
-  canvas.width = $(window).width();
-  canvas.height = $(window).height() - 23;
+  canvas.width = window.innerWidth; // test on other browsers
+  canvas.height = window.innerHeight - 23;
   $(canvas).
     css('position', 'absolute').
     css('top', '0px').
@@ -109,9 +109,9 @@ function init() {
 
   /* TODO This is horseshit, i just don't know how much i want to integrate graphex into the DOM */
   $(canvas).on('mousedown', function (ev) {
-    graphex.mouseDown(ev.offsetX, ev.offsetY);
+    graphex.mouseDown(ev.clientX, ev.clientY);
   }).on('mousemove', function(ev) {
-    graphex.mouseMove(ev.offsetX, ev.offsetY);
+    graphex.mouseMove(ev.clientX, ev.clientY);
     if (graphex._getDraggingNodeId() !== null)
       updateAndRender();
   }).on('mouseup', function(ev) {
