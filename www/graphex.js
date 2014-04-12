@@ -66,9 +66,31 @@ function init() {
     css('left', '0px').
     appendTo(document.body);
 
+  /* Graph events from server */
   socket.on('newGraph', function(data) {
     console.log('new graph:', data.graph);
     graphex = newgraphex(canvas, data.graph);
+    updateAndRender();
+  });
+
+  socket.on('addNode', function(data) {
+    console.log('server sez addNode:', data);
+    graphex.addNode(data.id, data.data);
+    updateAndRender();
+  });
+  socket.on('removeNode', function(data) {
+    console.log('server sez removeNode:', data);
+    graphex.removeNode(data.id);
+    updateAndRender();
+  });
+  socket.on('addEdge', function(data) {
+    console.log('server sez addEdge:', data);
+    graphex.addEdge(data.a, data.b, data.data);
+    updateAndRender();
+  });
+  socket.on('removeEdge', function(data) {
+    console.log('server sez removeEdge:', data);
+    graphex.removeEdge(data.a, data.b);
     updateAndRender();
   });
 
