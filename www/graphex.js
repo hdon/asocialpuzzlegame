@@ -6,6 +6,7 @@ var pingInterval
   , socket
   , newgraph
   , graphex
+  , graphexRenderStable = true
   ;
 
 function init() {
@@ -120,14 +121,22 @@ function init() {
 }
 
 /* TODO this is horseshit, i just don't know how much i want to integrate graphex into the DOM */
+
 function updateAndRender() {
+  if (!graphexRenderStable)
+    return;
+  updateAndRenderReal();
+}
+
+function updateAndRenderReal() {
   var maxv;
   maxv = graphex._update(); // TODO time!
   graphex._render();
-  if (maxv > 0.1)
-    requestAnimFrame(updateAndRender);
-  else
+  graphexRenderStable = maxv <= 0.1;
+  if (graphexRenderStable)
     console.log('graphex stable');
+  else
+    requestAnimFrame(updateAndRenderReal);
 }
 
 function newgraphex(canvas, copy) {
