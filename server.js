@@ -6,8 +6,6 @@ var app = require('http').createServer(handler)
   , nicks = {} /* nick -> uid */
   , nicksByUid = {}
   , nextUID = 1000
-  , newgraph = require('./common/graph').newgraph
-  , graph = newgraph()
   ;
 
 const BASEPATH = fs.realpathSync(pathm.dirname(process.argv[0]));
@@ -43,25 +41,6 @@ function handler (req, res) {
   });
 }
 
-graph.onNodeAdded = function(id, data) {
-  console.log('+node:', id, data);
-  io.sockets.emit('addNode', {id:id, data:data});
-}
-graph.onNodeRemoved = function(id, data) {
-  console.log('-node:', id, data);
-  io.sockets.emit('removeNode', {id:id, data:data});
-}
-graph.onEdgeAdded = function(a, b, data) {
-  console.log('+edge:', a, b, data);
-  io.sockets.emit('addEdge', {a:a, b:b, data:data});
-}
-graph.onEdgeRemoved = function(a, b, data) {
-  console.log('-edge:', a, b, data);
-  io.sockets.emit('removeEdge', {a:a, b:b, data:data});
-}
-
-graph.addNode('connections');
-
 io.sockets.on('connection', function (socket) {
   var uid = nextUID++
     , nick
@@ -72,11 +51,6 @@ io.sockets.on('connection', function (socket) {
 
   /* Tell the user his UID */
   socket.emit('uid', {uid:uid});
-
-  /* Send the newGraph message before setNick() because setNick() will
-   * send updates concerning the graph that this user wouldn't have yet.
-   */
-  socket.emit('newGraph', {graph:graph._getData()});
 
   /* Set user's nick */
   setNick('scrub'+uid);
@@ -92,8 +66,6 @@ io.sockets.on('connection', function (socket) {
         serverBroadcast(newNick+' has joined!');
       else {
         io.sockets.emit('chat', { nick: nick, msg: nick+' is now known as '+newNick });
-        /* Remove user's graph node! Fun! */
-        graph.removeNode('_user_'+nick);
       }
 
       /* Remove nick from chat system */
@@ -106,10 +78,6 @@ io.sockets.on('connection', function (socket) {
       /* Put new nick into chat system */
       nicks[nick] = uid;
       nicksByUid[uid] = nick;
-
-      /* Add a node for the user! Fun! */
-      graph.addNode('_user_'+nick);
-      graph.addEdge('connections', '_user_'+nick);
     }
   }
 
@@ -120,8 +88,6 @@ io.sockets.on('connection', function (socket) {
     /* Remove player's nick and uid */
     delete nicks[nick];
     delete nicksByUid[uid];
-    /* Remove user's graph node! Fun! */
-    graph.removeNode('_user_'+nick);
   });
 
   /* Sends one chat message to THIS user */
