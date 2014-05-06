@@ -78,14 +78,20 @@ function init() {
   });
 }
 
-/* http://www.paulirish.com/2011/requestanimationframe-for-smart-animating/ */
-window.requestAnimFrame = (function(){
-  return  window.requestAnimationFrame       ||
-          window.webkitRequestAnimationFrame ||
-          window.mozRequestAnimationFrame    ||
-          function( callback ){
-            window.setTimeout(callback, 1000 / 60);
-          };
+window.requestAnimFrame = (function() {
+  var firstFrameTime = Date.now(),
+      frameDuration = 1000/60;
+
+  function myRequestAnimationFrame(callback) {
+    var now = Date.now()
+        nextFrameTime = Math.ceil((now - firstFrameTime) / frameDuration) * frameDuration,
+    setTimeout(callback, now - nextFrameTime);
+  }
+
+  return window.requestAnimationFrame ||
+    window.webkitRequestAnimationFrame ||
+    window.mozRequestAnimationFrame ||
+    myRequestAnimationFrame;
 })();
 
 $(init);
