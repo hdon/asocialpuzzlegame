@@ -10,8 +10,18 @@ var app = require('http').createServer(handler)
 
 const BASEPATH = fs.realpathSync(pathm.dirname(process.argv[0]));
 
+console.log('HTTP document root:', config.httpRoot);
+console.log('HTTP server port:', config.httpPort);
+
 /* Serve http */
 app.listen(config.httpPort);
+
+function filenameExtension(path) {
+  var dotPos;
+  path = path.substr(path.lastIndexOf('/') + 1);
+  dotPos = path.lastIndexOf('.');
+  return dotPos >= 0 ? path.substr(dotPos + 1) : '';
+}
 
 function handler (req, res) {
   var path;
@@ -31,12 +41,28 @@ function handler (req, res) {
 
   fs.readFile(path,
   function (err, data) {
+    var headers = {};
+
     if (err) {
       res.writeHead(500);
       return res.end('Error');
     }
 
-    res.writeHead(200);
+    switch (filenameExtension(path)) {
+      case 'html':
+        headers['Content-Type'] = 'text/html';
+        break;
+      case 'js':
+        headers['Content-Type'] = 'application/javascript';
+        break;
+      case 'css':
+        headers['Content-Type'] = 'text/css';
+        break;
+      default:
+        headers['Content-Type'] = 'text/plain';
+    }
+
+    res.writeHead(200, headers);
     res.end(data);
   });
 }
