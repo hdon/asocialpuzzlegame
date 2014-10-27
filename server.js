@@ -160,17 +160,6 @@ io.sockets.on('connection', function (socket) {
     else io.sockets.emit('chat', { nick: nick, msg: data.msg });
   });
 
-  socket.on('addNode', function (data) {
-  });
-  socket.on('removeNode', function (data) {
-  });
-  socket.on('updateNode', function (data) {
-  });
-  socket.on('addEdge', function (data) {
-  });
-  socket.on('removeEdge', function (data) {
-  });
-
   function help(args) {
     if (args.length == 1) {
       switch (args[0]) {
