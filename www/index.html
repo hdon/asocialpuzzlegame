@@ -30,6 +30,12 @@
       #chat .nick {
         color: purple;
       }
+      #chat .notice .nick {
+        color: red;
+      }
+      #chat .notice .msg {
+        color: red;
+      }
       #chat .msg {
         color: gray;
       }
@@ -87,10 +93,11 @@
   <body>
     <div id="toolbar">
       <select id="gameBoardSelector">
-        <option selected="true">Select game board to play</option>
-        <option>New Game</option>
+        <option class="top" selected="true" value="none">No existing games. Click "New" to start a new one!</option>
       </select>
-      <button onclick="newGame()">New</button>
+      <button id="newButton">New</button>
+      <button id="forkButton">Fork</button>
+      <button id="shareButton">Share</button>
     </div>
     <div id="chatcontainer">
       <div id="chatscroller">

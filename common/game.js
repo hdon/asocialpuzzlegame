@@ -29,15 +29,12 @@ var gameBoardMethods = {
     us = this.userShape;
     dstX = mod(dstX + us.offsetX, this.width);
     dstY = mod(dstY + us.offsetY, this.height);
-    console.log('move()', dstX, dstY);
     for (y = 0; y < us.height; y++)
     {
       row = (dstY + y) % this.height * this.width;
-      console.log('move() row', row);
       for (x = 0; x < us.width; x++)
       {
         index = row + (dstX + x) % this.width;
-        console.log('move() index', index);
         grid[index] = (grid[index] + us[x + y * us.width]) % this.modulus;
       }
     }

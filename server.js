@@ -4,11 +4,11 @@ var app = require('http').createServer(handler)
   , pathm = require('path')
   , config = require('./config')
   , nicks = {} /* nick -> user uuid */
-  , nicksByUuid = {}
-  , socketsByUid = {} /* user uuid -> socket.io socket */
+  , nicksByUid = {}
   , uuid = require('node-uuid')
   , gameBoards = {} /* gameboard uuid -> gameboard */
   , game = require('./common/game')
+  , connectCounter = 1000
   ;
 
 const BASEPATH = fs.realpathSync(pathm.dirname(process.argv[0]));
@@ -74,21 +74,24 @@ function handler (req, res) {
 }
 
 io.sockets.on('connection', function (socket) {
-  var uid = uuid.v4()
+  var uid = socket.id
     , nick
     ;
 
-  /* Store the user's socket globally */
-  socketsByUid[uid] = socket;
-
   /* Tell the user his UID */
-  socket.emit('uid', {uid:uid});
+  socket.emit('uid', {uid: uid});
 
   /* Welcome the user */
   serverMessage("Welcome to the server!");
 
   /* Set user's nick */
-  setNick('scrub'+uid);
+  setNick('scrub' + connectCounter++);
+
+  /* Send player the list of users */
+  socket.emit('nicksByUid', {nicksByUid: nicksByUid});
+
+  /* Send player the list of gameboards */
+  sendGameList(socket);
 
   function setNick(newNick) {
     newNick = ''+newNick;
@@ -98,14 +101,13 @@ io.sockets.on('connection', function (socket) {
       serverMessage('The nick "'+newNick+'" is already in use.');
     else {
       if ('undefined' == typeof nick)
-        serverBroadcast(newNick+' has joined!');
-      else {
-        io.sockets.emit('chat', { nick: nick, msg: nick+' is now known as '+newNick });
-      }
+        socket.broadcast.emit('newuser',    {uid: uid, nick: newNick});
+      else
+        io.sockets      .emit('nickchange', {uid: uid, nick: newNick});
 
       /* Remove nick from chat system */
       delete nicks[nick];
-      delete nicksByUuid[uid];
+      delete nicksByUid[uid];
 
       /* Update nick */
       nick = newNick;
@@ -114,7 +116,7 @@ io.sockets.on('connection', function (socket) {
 
       /* Put new nick into chat system */
       nicks[nick] = uid;
-      nicksByUuid[uid] = nick;
+      nicksByUid[uid] = nick;
     }
   }
 
@@ -124,8 +126,7 @@ io.sockets.on('connection', function (socket) {
 
     /* Remove player's nick and uid */
     delete nicks[nick];
-    delete nicksByUuid[uid];
-    delete socketsByUid[uid];
+    delete nicksByUid[uid];
   });
 
   /* Sends one chat message to THIS user */
@@ -174,11 +175,12 @@ io.sockets.on('connection', function (socket) {
           case 'sub':
             gameBoardSubscribe(args[0], true);
             break;
-          case 'bus':
+          case 'unsub':
             gameBoardSubscribe(args[0], false);
             break;
           case 'move':
             move(args[0], parseInt(args[1]), parseInt(args[2]));
+            break;
         }
       } catch (e) {
         console.error(e);
@@ -191,6 +193,54 @@ io.sockets.on('connection', function (socket) {
 
   socket.on('move', function(data) {
     move(data.gbid, data.x, data.y);
+  });
+
+  socket.on('sharegameboard', function(data) {
+    var gameBoard = gameBoards[data.gbid]
+      , dstSocket = io.sockets.connected[data.uid]
+      ;
+    if (!gameBoard)
+    {
+      serverMessage('No such gameboard '+data.gbid);
+      return
+    }
+    if (!dstSocket)
+    {
+      serverMessage('No such user!');
+      return;
+    }
+    dstSocket.emit('sharegameboard', {uid: uid, gbid:data.gbid});
+  });
+
+  socket.on('forkgameboard', function(data) {
+    var gameBoard = gameBoards[data.gbid]
+      , previousOwner
+      ;
+    if (!gameBoard)
+    {
+      serverMessage('No such gameboard '+data.gbid);
+      return
+    }
+    
+    previousOwner = gameBoard.owners[gameBoard.owners.length-1];
+    /* Instantiate new gameboard */
+    gameBoard = game.reinstantiateGameBoard(JSON.parse(JSON.stringify(gameBoard)));
+    /* Set gameboard's mtime */
+    gameBoard.mtime = Date.now();
+    /* Log its new owner's nick */
+    gameBoard.owners.push(nick);
+    /* Assign it two UUIDs */
+    gbid = uuid.v4();
+    gameBoard.rouuid = uuid.v4(); /* read-only! */
+    /* Defining the properties this way suppresses their output in the JSON */
+    Object.defineProperty(gameBoard, 'uuid', { get: function() { return gbid } });
+    /* Index it by its UUIDs */
+    gameBoards[gameBoard.uuid] = gameBoard;
+    gameBoards[gameBoard.rouuid] = gameBoard;
+    /* Broadcast new game RO UUID */
+    io.emit('newgame', { owner: nick, ownerUid: uid, gbid: gameBoard.rouuid, forkedUser: previousOwner } );
+    /* Subscribe the player to this gameboard, using the writeable UUID */
+    gameBoardSubscribe(gbid, true);
   });
 
   function help(args) {
@@ -214,6 +264,8 @@ io.sockets.on('connection', function (socket) {
 
     /* Instantiate new gameboard */
     gameBoard = game.newGameBoard({randomize: 3});
+    /* Set gameboard's mtime */
+    gameBoard.mtime = Date.now();
     /* Log its first owner's nick */
     gameBoard.owners = [nick];
     /* Assign it two UUIDs */
@@ -244,7 +296,7 @@ io.sockets.on('connection', function (socket) {
       socket.emit('gameboard', { gbid: gbid, gameboard: gameBoard } );
     }
     else
-      socket.part('gameboard-'+gbid);
+      socket.leave('gameboard-'+gbid);
   }
 
   function move(gbid, x, y) {
@@ -271,6 +323,8 @@ io.sockets.on('connection', function (socket) {
     }
     /* Make the move */
     gameBoard.move(x, y);
+    /* Update gameboard's mtime */
+    gameBoard.mtime = Date.now();
     /* Broadcast the move to anyone subscribed to this board */
     io.to('gameboard-'+gameBoard.rouuid).emit('move', { x:x, y:y, gbid: gameBoard.rouuid });
     io.to('gameboard-'+gbid            ).emit('move', { x:x, y:y, gbid: gbid             });
@@ -280,4 +334,22 @@ io.sockets.on('connection', function (socket) {
 /* Sends one chat message to ALL users */
 function serverBroadcast(msg) {
   io.sockets.emit('chat', { nick: '*SERVER*', msg: msg });
+}
+
+function sendGameList(socket) {
+  var gameBoardList = []
+    , uuid
+    , gb
+    ;
+  for (var gbid in gameBoards)
+  {
+    gb = gameBoards[gbid];
+    if (gb.uuid != gbid) /* only send readonly uuids */
+      gameBoardList.push({gbid: gbid, owner: gb.owners[gb.owners.length-1]});
+  }
+  if (gameBoardList.length)
+  {
+    gameBoardList.sort(function(a, b){return gameBoards[b.gbid].mtime - gameBoards[a.gbid].mtime});
+    socket.emit('gamelist', {gameBoards: gameBoardList});
+  }
 }
