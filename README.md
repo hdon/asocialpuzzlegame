@@ -14,4 +14,6 @@ You can share your game with someone else so that you can cooperate.
 Running
 =======
 
-To run, edit config.js, then `node bundle && node server`
+To setup, edit config.js. Then: `npm install`.
+
+To run: `node bundle && node server`.
